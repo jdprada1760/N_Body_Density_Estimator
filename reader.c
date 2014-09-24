@@ -137,12 +137,14 @@ void readBinary( char* name ){
   SKIP;
 
   // IDs
+  // Omitir los IDs de los primeros n-tipos
   printf("Getting Particle IDs...\n");
   SKIP;
   fread( &Id, sizeof(Id), 1, file );
   SKIP;
 
   // Masas
+  // Recordar omitir las masas de los primeros n-tipos
   printf("Getting Masses...\n");
   SKIP;
   int sum = 0;
