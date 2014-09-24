@@ -46,22 +46,21 @@ int main(int argc, char **argv){
   printf("Begin...\n");
   readBinary( argv[1] );
   FILE *fila = fopen( argv[2], "w" );
+  if(!fila){
+    printf("Could not open WriteFile");
+  }
   // Imprime un archivo con las posiciones, velocidades, masas y IDs de las partículas
   int i;
   printf("Writing...\n");
   i = 0;
-  fprintf( fila, "Archivo\n");
-
   for( i = 0; i < numP; i++ ){
-    printf("%d\n",i);
-    fprintf( fila, "%d %f %f %f %f %f %f\n", Id[i], P[i].Pos[0], P[i].Pos[1], P[i].Pos[2], P[i].Vel[0] ,P[i].Vel[1] ,P[i].Vel[2] );
+    fprintf( fila, "%f %f %f %f %f %f\n", P[i].Pos[0], P[i].Pos[1], P[i].Pos[2], P[i].Vel[0] ,P[i].Vel[1] ,P[i].Vel[2] );
   }
   fclose(fila);
   return 0;
 }
 
 void readBinary( char* name ){
-  FILE *fila = fopen("phase_Space.dat", "w");
   // Abre el archivo para leer en binario
   printf("Opening file...\n");
   FILE* file = fopen( name, "r" );
@@ -123,7 +122,6 @@ void readBinary( char* name ){
   for( i = 0; i < numP; i++){
     for( j = 0; j < 3; j++){
       fread( &P[i].Pos[j], sizeof(float), 1, file );
-      fprintf(fila, "%f\n", P[i].Pos[j]);
     }
   }
   SKIP;
@@ -164,6 +162,5 @@ void readBinary( char* name ){
   SKIP;
   printf("End...\n");
   fclose(file);
-  fclose(fila);
 }
 
