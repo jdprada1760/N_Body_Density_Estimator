@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#define man "./reader.x toRead toWrite"
+#define man "./reader.x toRead toWrite n seed"
 
 void readBinary(char* name);
 
@@ -33,11 +33,10 @@ struct Particle{
   float* Pos;
   float* Vel;
   float Mass;
-  int Type;
+  int Id;
 };
 
 // Crea el contenedor de IDs
-int* Id;
 int numP = 0; //Numero de Particulas
 struct Header header;
 struct Particle* P;
@@ -49,12 +48,20 @@ int main(int argc, char **argv){
   if(!fila){
     printf("Could not open WriteFile");
   }
-  // Imprime un archivo con las posiciones, velocidades, masas y IDs de las partículas
+  // Imprime un archivo con las posiciones, velocidades, masas y IDs de una nésima fracción de partículas
+  int seed = atoi( argv[4] );
+  int n = atoi( argv[3] );
+  srand48(seed);
   int i;
+  float randy;
   printf("Writing...\n");
   i = 0;
   for( i = 0; i < numP; i++ ){
-    fprintf( fila, "%f %f %f %f %f %f\n", P[i].Pos[0], P[i].Pos[1], P[i].Pos[2], P[i].Vel[0] ,P[i].Vel[1] ,P[i].Vel[2] );
+    randy = n*drand48();
+    // Imprime solo 1/n de las partículas
+    if( randy < 1 ){
+      fprintf( fila, "%d %f %f %f %f %f %f %f\n",P[i].Id, P[i].Mass, P[i].Pos[0], P[i].Pos[1], P[i].Pos[2], P[i].Vel[0] ,P[i].Vel[1] ,P[i].Vel[2] );
+    }
   }
   fclose(fila);
   return 0;
@@ -97,18 +104,17 @@ void readBinary( char* name ){
   // Obtiene el numero de particulas
   printf("Getting number of particles...\n");
   numP += header.npart[5];
-  printf("%d\n", header.npart[5]);
+  //printf("%d\n", header.npart[5]);
   
 
   // Aparta memoria
   printf("Allocating memory...\n");
   P = malloc(numP*sizeof(struct Particle));
-  Id = malloc(numP*sizeof(int));
   for( i = 0; i < numP; i++){
     P[i].Pos = malloc(3*sizeof(float));
     P[i].Vel = malloc(3*sizeof(float));
   }
-  printf("%d\n", numP);
+  printf("El numero de particulas es %d\n", numP);
 
   //-------------------------------------------------------------
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -137,25 +143,27 @@ void readBinary( char* name ){
   SKIP;
 
   // IDs
-  // Omitir los IDs de los primeros n-tipos
   printf("Getting Particle IDs...\n");
   SKIP;
-  fread( &Id, sizeof(Id), 1, file );
+  for( i = 0 ; i < numP; i++ ){
+    fread( &P[i].Id, sizeof(int), 1, file );
+  }
   SKIP;
 
   // Masas
-  // Recordar omitir las masas de los primeros n-tipos
   printf("Getting Masses...\n");
   SKIP;
   int sum = 0;
   i = 5;
   if( header.mass[i] == 0 ){
+    //printf(" Las masas son iguales\n ");
     for( j = 0; j < header.npart[i]; j++ ){
       fread( &P[sum].Mass, sizeof(float), 1, file );
       sum++;
     }
   }
   else{
+    //printf("Las masas son diferentes ");
     for( j = 0; j < header.npart[i]; j++ ){
       P[sum].Mass = header.mass[i];
     }
