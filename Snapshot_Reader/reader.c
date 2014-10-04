@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#define man "./reader.x toRead toWrite n seed"
+#define man "./reader.x toRead"
 
 void readBinary(char* name);
 
@@ -42,28 +42,24 @@ struct Header header;
 struct Particle* P;
 
 int main(int argc, char **argv){
+  
   printf("Begin...\n");
   readBinary( argv[1] );
-  FILE *fila = fopen( argv[2], "w" );
-  if(!fila){
-    printf("Could not open WriteFile");
-  }
-  // Imprime un archivo con las posiciones, velocidades, masas y IDs de una nésima fracción de partículas
-  int seed = atoi( argv[4] );
-  int n = atoi( argv[3] );
-  srand48(seed);
+
+  //-------------------------------------------------------------
+  //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  // Do whatever i want ññ
+  //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  //-------------------------------------------------------------
+  
+  // Recupera la memoria ocupada 
   int i;
-  float randy;
-  printf("Writing...\n");
-  i = 0;
+  printf("Freeing memory... \n");
   for( i = 0; i < numP; i++ ){
-    randy = n*drand48();
-    // Imprime solo 1/n de las partículas
-    if( randy < 1 ){
-      fprintf( fila, "%d %f %f %f %f %f %f %f\n",P[i].Id, P[i].Mass, P[i].Pos[0], P[i].Pos[1], P[i].Pos[2], P[i].Vel[0] ,P[i].Vel[1] ,P[i].Vel[2] );
-    }
+      free(P[i].Pos);
+      free(P[i].Vel);
   }
-  fclose(fila);
+  free(P);
   return 0;
 }
 
