@@ -59,7 +59,7 @@ int main(int argc, char **argv){
   for( i = 0; i < numP; i++ ){
     randy = n*drand48();
     // Imprime solo 1/n de las partículas
-    if( randy < 1 ){
+    if( randy <= 1 ){
       fprintf( fila, "%d %f %f %f %f %f %f %f\n",P[i].Id, P[i].Mass, P[i].Pos[0], P[i].Pos[1], P[i].Pos[2], P[i].Vel[0] ,P[i].Vel[1] ,P[i].Vel[2] );
     }
   }
