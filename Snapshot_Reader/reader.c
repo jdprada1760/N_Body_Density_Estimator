@@ -25,7 +25,7 @@ struct Header{
   int flag_metals;
   int numPart_total_hw;
   int flag_entropy_ics;
-  char fill[256 - sizeof(unsigned int) - 7*sizeof(double) - 9*sizeof(int)];	/* fills to 256 Bytes */
+  char fill[256 - 6*sizeof(unsigned int) - 12*sizeof(double)- 14*sizeof(int)];	/* fills to 256 Bytes */
 };
 
 // Estructura que contiene la información importante de las partículas
@@ -74,7 +74,7 @@ void readBinary( char* name ){
   }
 
   // Abre y cierra los bloques 
-# define SKIP fread(&dummy, sizeof(dummy), 1, file)
+# define SKIP fread(&dummy, sizeof(dummy), 1, file); printf("%d\n", dummy)
 
   //-------------------------------------------------------------
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -99,8 +99,16 @@ void readBinary( char* name ){
 
   // Obtiene el numero de particulas
   printf("Getting number of particles...\n");
-  numP += header.npart[5];
-  //printf("%d\n", header.npart[5]);
+  int type = 5;
+  numP += header.npart[type];
+  
+  /*
+// Determina el tipo de particulas que se quiere
+  int k;
+  for( k = 0; k < 6; k++){
+    printf("%d\n", header.npart[k]);
+  }
+  */
   
 
   // Aparta memoria
