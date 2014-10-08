@@ -103,9 +103,16 @@ void readBinary( char* name ){
 
   // Obtiene el numero de particulas
   printf("Getting number of particles...\n");
-  numP += header.npart[5];
-  //printf("%d\n", header.npart[5]);
+  int type = 1;
+  numP += header.npart[type];
   
+  /*
+// Determina el tipo de particulas que se quiere
+  int k;
+  for( k = 0; k < 6; k++){
+    printf("%d\n", header.npart[k]);
+  }
+  */
 
   // Aparta memoria
   printf("Allocating memory...\n");
