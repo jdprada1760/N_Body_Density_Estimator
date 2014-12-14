@@ -1,5 +1,6 @@
 /*
  * Programa que imprime la densidad de una simulacion dada por fstate en un conjunto de puntos dados.
+ * Para incluir la libreria de algebra lineal: cc filename.c -o out.x -L. -lLinalg
  */
 
 #include <stdio.h>
