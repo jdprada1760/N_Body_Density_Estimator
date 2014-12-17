@@ -6,20 +6,6 @@
 #include <stdlib.h>
 
 //----------------------------------------
-//   Declaracion Metodos
-//----------------------------------------
-float* product(float* m, float* b);
-float* cross(float* a,float* b);
-float det(float* m);
-float* inverse(float* m);
-float dot(float* a, float* b);
-float* by(float* m, float* m0);
-
-int main(){
-  return 0;
-}
-
-//----------------------------------------
 //   Metodos
 //----------------------------------------
 /*
@@ -74,7 +60,7 @@ float* inverse(float* m1){
   float *m = m1;
   float* inv = malloc(9*sizeof(float));
   // Uno sobre el determinante
-  float undet = 1/det(m);
+  float undet = 1.0/det(m);
   inv[0] =  (m[4]*m[8] - m[5]*m[7])*undet;
   inv[1] = -(m[1]*m[8] - m[7]*m[2])*undet;
   inv[2] =  (m[1]*m[5] - m[2]*m[4])*undet;
