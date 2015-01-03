@@ -8,47 +8,48 @@
 #include <string.h>
 #include <math.h>
 #define man "./estimar.x finalState points toWrite"
-#define n = pow(128,3);
-#define nTh = 6*pow(127,3);
+#define n pow(128,3)
+#define nTh 6*pow(127,3)
 
 //----------------------------------------
 //   Declaracion Metodos
 //----------------------------------------
 void allocate_All();
-void readFile(FILE* data, float* fstate);
+void readFile(FILE* data);
 // Linalg
 float* product(float* m1, float* b1);
 float* cross(float* a1,float* b1);
 float det(float* m1);
 float* inverse(float* m1);
 
+//----------------------------------------
+//   Variables generales
+//----------------------------------------
+
+// Los valores que definen un tetraedro
+float** matrices;
+float** refVecs;
+float* volumes;
+// El estado final de la simulacion
+float** fstate;
+unsigned int* Ids;
+
 
 
 int main(int argc, char **argv){
-  //----------------------------------------
-  //   Variables generales
-  //----------------------------------------
-
-  // Los valores que definen un tetraedro
-  float* matrices;
-  float* refVecs;
-  float* volumes;
-  // El estado final de la simulacion
-  float* fstate;
-  unsigned int* Ids;
-
   // EL archivo donde se guardaron las condiciones finales
   FILE *data;
   char *name = argv[1];
   // Aparta memoria
-  allocateAll();
+  allocate_All();
   // El archivo de texto de condiciones iniciales y de evolucion en el tiempo
   data = fopen( name, "r" );
   // Lee el archivo data a fstate
-  readFile(data, fstate);
+  readFile(data);
   // Crea los tetraedros definidos por matrices, refvecs y volumes
 
 
+  return 0;
 }
 
 //----------------------------------------
@@ -59,29 +60,178 @@ int main(int argc, char **argv){
  * Aparta memoria
  */
 void allocate_All(){
-   int i,j,k;
-   matrices = malloc(3*3*nTh*sizeof(float**));
-   refvecs = malloc(3*nTh*sizeof(float*));
-   volumes = malloc(nTh*sizeof(float));
-   fstate = malloc(3*n*sizeof(float*));
-   Ids = malloc(n*sizeof(unsigned int));
+  int i;
+  matrices = malloc(nTh*sizeof(float*));
+  refVecs = malloc(nTh*sizeof(float*));
+  for( i = 0; i < nTh; i++){
+    matrices[i] = malloc(9*sizeof(float));
+    refVecs[i] = malloc(3*sizeof(float));
+  }
+  volumes = malloc(nTh*sizeof(float));
+  fstate = malloc(n*sizeof(float*));
+  for( i = 0; i < n; i++){
+    fstate[i] = malloc(3*sizeof(float));
+  }
+  Ids = malloc(n*sizeof(unsigned int));
 }
 
-void readFile(FILE* data, float* fstate){
-  /*
-   * Lee el archivo y lo guarda en fstate
-   */
+/*
+ * Lee el archivo y lo guarda en fstate
+ */
+void readFile(FILE* data){
    float tmp;
    float x,y,z;
    unsigned int id;
+   int test;
    do{
-     int test = fscanf(data, "%d %f %f %f %f %f %f %f\n", &id, &tmp, &x, &y, &z, &tmp1, &tmp1, &tmp1);
-     fstate[3*id+0] = x;
-     fstate[3*id+1] = y:
-     fstate[3*id+2] = z;
+     test = fscanf(data, "%d %f %f %f %f %f %f %f\n", &id, &tmp, &x, &y, &z, &tmp, &tmp, &tmp);
+     fstate[id][0] = x;
+     fstate[id][1] = y;
+     fstate[id][2] = z;
      }while( test!=EOF );
 }
 
+/*
+ * Llena el array de matrices y tetraedros
+ */
+ void mkThdrons(){
+   // Longitud de la arista de los cubos
+   unsigned int L = 16;
+   // Iteradores
+   unsigned int l,i,j,k,g;
+   g = 0;
+   // numero de cubos en la simulacion
+   unsigned int nit = n/pow(L,3);
+   for( l = 0; l < nit; l++ ){
+     for( i = 0; i < L-1; i++ ){
+       for( j = 0; j < L-1; j++ ){
+         for( k = 0; k < L-1; k++ ){
+           // Id de las esquina de un tetraedro
+           unsigned int point = l*pow(L,3) + i*pow(L,2) + j*L + k;
+           unsigned int point2 = point + pow(L,2) + L + 1;
+           unsigned int point3, point4;
+           // Volumen del tetraedro
+           float vol;
+           // Vector de referencia (esquina del tetraedro)
+           float* rv = fstate[point];
+           // Matriz de transformada baricentrica
+           float* mv = malloc(9*sizeof(float));
+           mv[0] = fstate[point2][0] - fstate[point][0];
+           mv[3] = fstate[point2][1] - fstate[point][1];
+           mv[6] = fstate[point2][2] - fstate[point][2];
+           //------------------------------------------------------------------------------
+           // Primer tetraedro
+           //------------------------------------------------------------------------------
+           point3 = point+L;
+           point4 = point+(L*L)+L;
+           mv[1] = fstate[point3][0] - fstate[point][0];
+           mv[4] = fstate[point3][1] - fstate[point][1];
+           mv[7] = fstate[point3][2] - fstate[point][2];
+           mv[2] = fstate[point4][0] - fstate[point][0];
+           mv[5] = fstate[point4][1] - fstate[point][1];
+           mv[8] = fstate[point4][2] - fstate[point][2];
+           vol = det(mv)/2;
+           if( vol != 0){
+             refVecs[g] = rv;
+             matrices[g] = inverse(mv);
+             volumes[g] = vol;
+             g++;
+           }
+           //------------------------------------------------------------------------------
+           // Segundo tetraedro
+           //------------------------------------------------------------------------------
+           point3 = point+L;
+           point4 = point+1+L;
+           mv[1] = fstate[point3][0] - fstate[point][0];
+           mv[4] = fstate[point3][1] - fstate[point][1];
+           mv[7] = fstate[point3][2] - fstate[point][2];
+           mv[2] = fstate[point4][0] - fstate[point][0];
+           mv[5] = fstate[point4][1] - fstate[point][1];
+           mv[8] = fstate[point4][2] - fstate[point][2];
+           vol = det(mv)/2;
+           if( vol != 0){
+             refVecs[g] = rv;
+             matrices[g] = inverse(mv);
+             volumes[g] = vol;
+             g++;
+           }
+           //------------------------------------------------------------------------------
+           // Tercer tetraedro
+           //------------------------------------------------------------------------------
+           point3 = point+(L*L);
+           point4 = point+(L*L)+L;
+           mv[1] = fstate[point3][0] - fstate[point][0];
+           mv[4] = fstate[point3][1] - fstate[point][1];
+           mv[7] = fstate[point3][2] - fstate[point][2];
+           mv[2] = fstate[point4][0] - fstate[point][0];
+           mv[5] = fstate[point4][1] - fstate[point][1];
+           mv[8] = fstate[point4][2] - fstate[point][2];
+           vol = det(mv)/2;
+           if( vol != 0){
+             refVecs[g] = rv;
+             matrices[g] = inverse(mv);
+             volumes[g] = vol;
+             g++;
+           }
+           //------------------------------------------------------------------------------
+           // Cuarto tetraedro
+           //------------------------------------------------------------------------------
+           point3 = point+(L*L);
+           point4 = point+(L*L)+1;
+           mv[1] = fstate[point3][0] - fstate[point][0];
+           mv[4] = fstate[point3][1] - fstate[point][1];
+           mv[7] = fstate[point3][2] - fstate[point][2];
+           mv[2] = fstate[point4][0] - fstate[point][0];
+           mv[5] = fstate[point4][1] - fstate[point][1];
+           mv[8] = fstate[point4][2] - fstate[point][2];
+           vol = det(mv)/2;
+           if( vol != 0){
+             refVecs[g] = rv;
+             matrices[g] = inverse(mv);
+             volumes[g] = vol;
+             g++;
+           }
+           //------------------------------------------------------------------------------
+           // Quinto tetraedro
+           //------------------------------------------------------------------------------
+           point3 = point+1;
+           point4 = point+1+L;
+           mv[1] = fstate[point3][0] - fstate[point][0];
+           mv[4] = fstate[point3][1] - fstate[point][1];
+           mv[7] = fstate[point3][2] - fstate[point][2];
+           mv[2] = fstate[point4][0] - fstate[point][0];
+           mv[5] = fstate[point4][1] - fstate[point][1];
+           mv[8] = fstate[point4][2] - fstate[point][2];
+           vol = det(mv)/2;
+           if( vol != 0){
+             refVecs[g] = rv;
+             matrices[g] = inverse(mv);
+             volumes[g] = vol;
+             g++;
+           }
+           //------------------------------------------------------------------------------
+           // Sexto tetraedro
+           //------------------------------------------------------------------------------
+           point3 = point+1;
+           point4 = point+(L*L)+1;
+           mv[1] = fstate[point3][0] - fstate[point][0];
+           mv[4] = fstate[point3][1] - fstate[point][1];
+           mv[7] = fstate[point3][2] - fstate[point][2];
+           mv[2] = fstate[point4][0] - fstate[point][0];
+           mv[5] = fstate[point4][1] - fstate[point][1];
+           mv[8] = fstate[point4][2] - fstate[point][2];
+           vol = det(mv)/2;
+           if( vol != 0){
+             refVecs[g] = rv;
+             matrices[g] = inverse(mv);
+             volumes[g] = vol;
+             g++;
+           }
+         }
+       }
+     }
+   }
+ }
 
 
 //---------------------------------------------------------------------------------------------------------------------------------
