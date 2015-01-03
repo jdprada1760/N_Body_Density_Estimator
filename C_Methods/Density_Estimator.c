@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
+// final state: el estado final de la simulacion en formato no binario
+// points: El archivo con los puntos donde se quiere estimar la densidad
+// towrite: El archivo final con la densidad en dichos puntos
 #define man "./estimar.x finalState points toWrite"
 #define n pow(128,3)
 #define nTh 6*pow(127,3)
@@ -14,6 +18,7 @@
 //----------------------------------------
 //   Declaracion Metodos
 //----------------------------------------
+void mkThdrons();
 void allocate_All();
 void readFile(FILE* data);
 // Linalg
@@ -37,6 +42,7 @@ unsigned int* Ids;
 
 
 int main(int argc, char **argv){
+  time_t start = time(NULL);
   // EL archivo donde se guardaron las condiciones finales
   FILE *data;
   char *name = argv[1];
@@ -47,8 +53,8 @@ int main(int argc, char **argv){
   // Lee el archivo data a fstate
   readFile(data);
   // Crea los tetraedros definidos por matrices, refvecs y volumes
-
-
+  mkThdrons();
+  printf("Total Time elapsed: %f\n", (double)(time(NULL) - start));
   return 0;
 }
 
@@ -60,7 +66,9 @@ int main(int argc, char **argv){
  * Aparta memoria
  */
 void allocate_All(){
+  time_t start = time(NULL);
   int i;
+  printf("Allocating...\n");
   matrices = malloc(nTh*sizeof(float*));
   refVecs = malloc(nTh*sizeof(float*));
   for( i = 0; i < nTh; i++){
@@ -73,28 +81,34 @@ void allocate_All(){
     fstate[i] = malloc(3*sizeof(float));
   }
   Ids = malloc(n*sizeof(unsigned int));
+  printf("Time elapsed: %f\n", (float)(time(NULL) - start));
 }
 
 /*
  * Lee el archivo y lo guarda en fstate
  */
 void readFile(FILE* data){
-   float tmp;
-   float x,y,z;
-   unsigned int id;
-   int test;
-   do{
-     test = fscanf(data, "%d %f %f %f %f %f %f %f\n", &id, &tmp, &x, &y, &z, &tmp, &tmp, &tmp);
-     fstate[id][0] = x;
-     fstate[id][1] = y;
-     fstate[id][2] = z;
-     }while( test!=EOF );
+  time_t start = time(NULL);
+  printf("Reading file...\n");
+  float tmp;
+  float x,y,z;
+  unsigned int id;
+  int test;
+  do{
+    test = fscanf(data, "%d %f %f %f %f %f %f %f\n", &id, &tmp, &x, &y, &z, &tmp, &tmp, &tmp);
+    fstate[id-1][0] = x;
+    fstate[id-1][1] = y;
+    fstate[id-1][2] = z;
+  }while( test!=EOF );
+  printf("Time elapsed: %f\n", (float)(time(NULL) - start));
 }
 
 /*
  * Llena el array de matrices y tetraedros
  */
  void mkThdrons(){
+   time_t start = time(NULL);
+   printf("Making tetrahedrons...\n");
    // Longitud de la arista de los cubos
    unsigned int L = 16;
    // Iteradores
@@ -231,6 +245,7 @@ void readFile(FILE* data){
        }
      }
    }
+   printf("Time elapsed: %f\n", (float)(time(NULL) - start));
  }
 
 

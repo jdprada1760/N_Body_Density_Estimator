@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 //----------------------------------------
 //   Metodos
@@ -92,6 +93,7 @@ float* by(float* m, float* m0){
 }
 
 int main(){
+  time_t start = time(NULL);
   float *matrix = malloc(9*sizeof(float));
   matrix[0] = -5;
   matrix[1] = 3;
@@ -107,5 +109,6 @@ int main(){
   printf("La inversa de la matriz es: \n%f  %f  %f\n%f  %f  %f\n%f  %f  %f\n", inv[0], inv[1], inv[2], inv[3], inv[4], inv[5], inv[6], inv[7], inv[8]);
   inv = by(matrix,inv);
   printf("El producto de la matriz por su inversa es : \n%f  %f  %f\n%f  %f  %f\n%f  %f  %f\n", inv[0], inv[1], inv[2], inv[3], inv[4], inv[5], inv[6], inv[7], inv[8]);
+  printf("Time elapsed: %f\n", (float)(time(NULL) - start));
   return 0;
 }
