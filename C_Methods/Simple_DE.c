@@ -67,6 +67,13 @@ int main(int argc, char **argv){
   fclose(data);
   // Crea los tetraedros definidos por matrices, refvecs y volumes
   mkThdrons();
+  // Desaloja la memoria utilizada por fstate y Ids
+  free(Ids);
+  int i;
+  for( i = 0; i < n; i++){
+    free(fstate[i]);
+  }
+  free(fstate);
         //printf("Total Time elapsed: %f\n", (double)(time(NULL) - start));
   // Lee los puntos para evaluar la densidad
   LoLpoints = fopen( namePoints, "r" );
@@ -123,6 +130,7 @@ void readFile(FILE* data){
     fstate[id-1][1] = y;
     fstate[id-1][2] = z;
   }while( test!=EOF );
+  printf("Last ID: %d\n", id);
   printf("Time elapsed: %f\n", (float)(time(NULL) - start));
 }
 
@@ -301,6 +309,7 @@ void readFile2(FILE* data){
        }
      }
    }
+   printf("Last Tetrahedron: %d\n", i*j*k*6);
    printf("Time elapsed: %f\n", (float)(time(NULL) - start));
  }
 
@@ -311,19 +320,19 @@ void getDensities(){
   time_t start = time(NULL);
   printf("Getting Densities...\n");
   // Indices del proceso
-  unsigned int i,j;
+  int i,j;
   float* temp;
   float* temp2 = malloc(3*sizeof(float));
-  for( i = nTh; i > 0; i-- ){
+  for( i = nTh-1; i >= 0; i-- ){
     float vol = volumes[i];
     float* vic = refVecs[i];
     float* matriz = matrices[i];
-    for( j = npoints; j > 0; j--){
+    for( j = npoints-1; j >= 0; j--){
       temp2[0] = points[j][0] - vic[0];
       temp2[1] = points[j][1] - vic[1];
       temp2[2] = points[j][2] - vic[2];
       temp = product(matriz,temp2);
-      if( (temp[0] - 1 < 0)  && (temp[1] - 1 < 0) && (temp[2] - 1 < 0) ){
+      if( (temp[0] - 1 <= 0)  && (temp[1] - 1 <= 0) && (temp[2] - 1 <= 0) ){
         densities[j] += 1/vol;
       }
     }
