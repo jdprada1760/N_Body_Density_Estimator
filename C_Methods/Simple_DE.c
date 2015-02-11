@@ -32,6 +32,7 @@ float* product(float* m1, float* b1);
 float* cross(float* a1,float* b1);
 float det(float* m1);
 float* inverse(float* m1);
+unsigned int realnTh;
 
 //----------------------------------------
 //   Variables generales
@@ -309,7 +310,8 @@ void readFile2(FILE* data){
        }
      }
    }
-   printf("Last Tetrahedron: %d\n", i*j*k*6);
+   realnTh = g;
+   printf("Last Tetrahedron: %d\n", g);
    printf("Time elapsed: %f\n", (float)(time(NULL) - start));
  }
 
@@ -323,7 +325,7 @@ void getDensities(){
   int i,j;
   float* temp;
   float* temp2 = malloc(3*sizeof(float));
-  for( i = nTh-1; i >= 0; i-- ){
+  for( i = realnTh-1; i >= 0; i-- ){
     float vol = volumes[i];
     float* vic = refVecs[i];
     float* matriz = matrices[i];
