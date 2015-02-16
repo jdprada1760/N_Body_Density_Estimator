@@ -388,6 +388,7 @@ float* product(float* m1, float* b1){
   ans[0] = m[0]*b[0] + m[3]*b[1] + m[6]*b[2];
   ans[1] = m[1]*b[0] + m[4]*b[1] + m[7]*b[2];
   ans[2] = m[2]*b[0] + m[5]*b[1] + m[8]*b[2];
+  free(ans);
   return ans;
 }
 /*
@@ -400,6 +401,7 @@ float* cross(float* a1,float* b1){
   ans[0] = a[1]*b[2] - a[2]*b[1];
   ans[1] = b[0]*a[2] - b[2]*a[0];
   ans[2] = a[0]*b[1] - a[1]*b[0];
+  free(ans);
   return ans;
 }
 /*
