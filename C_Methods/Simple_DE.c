@@ -334,7 +334,7 @@ void getDensities(){
       temp2[1] = points[j][1] - vic[1];
       temp2[2] = points[j][2] - vic[2];
       temp = product(matriz,temp2);
-      if( (temp[0] - 1 <= 0)  && (temp[1] - 1 <= 0) && (temp[2] - 1 <= 0) ){
+      if( (temp[0] >= 0 ) && (temp[1] >= 0 ) && (temp[2] >= 0 ) && (temp[0] - 1 <= 0)  && (temp[1] - 1 <= 0) && (temp[2] - 1 <= 0) ){
         densities[j] += 1/vol;
       }
     }
