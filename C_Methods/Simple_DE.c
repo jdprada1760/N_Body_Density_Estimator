@@ -326,6 +326,10 @@ void getDensities(){
   float* temp;
   float* temp2 = malloc(3*sizeof(float));
   for( i = realnTh-1; i >= 0; i-- ){
+    float progress = (100*(realnTh - i)/realnTh);
+    if( (int)progress == progress){
+      printf("Progress--------->%f\n",progress);
+    }
     float vol = volumes[i];
     float* vic = refVecs[i];
     float* matriz = matrices[i];
