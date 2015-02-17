@@ -326,10 +326,6 @@ void getDensities(){
   float* temp;
   float* temp2 = malloc(3*sizeof(float));
   for( i = realnTh-1; i >= 0; i-- ){
-    float progress = (100*(realnTh - i)/realnTh);
-    if( (int)progress == progress){
-      printf("Progress--------->%f\n",progress);
-    }
     float vol = volumes[i];
     float* vic = refVecs[i];
     float* matriz = matrices[i];
@@ -341,6 +337,7 @@ void getDensities(){
       if( (temp[0] >= 0 ) && (temp[1] >= 0 ) && (temp[2] >= 0 ) && (temp[0] - 1 <= 0)  && (temp[1] - 1 <= 0) && (temp[2] - 1 <= 0) ){
         densities[j] += 1/vol;
       }
+      free(temp);
     }
   }
   printf("Time elapsed: %f\n", (float)(time(NULL) - start));
@@ -392,7 +389,6 @@ float* product(float* m1, float* b1){
   ans[0] = m[0]*b[0] + m[3]*b[1] + m[6]*b[2];
   ans[1] = m[1]*b[0] + m[4]*b[1] + m[7]*b[2];
   ans[2] = m[2]*b[0] + m[5]*b[1] + m[8]*b[2];
-  free(ans);
   return ans;
 }
 /*
@@ -405,7 +401,6 @@ float* cross(float* a1,float* b1){
   ans[0] = a[1]*b[2] - a[2]*b[1];
   ans[1] = b[0]*a[2] - b[2]*a[0];
   ans[2] = a[0]*b[1] - a[1]*b[0];
-  free(ans);
   return ans;
 }
 /*
