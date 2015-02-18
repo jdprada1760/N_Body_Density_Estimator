@@ -209,7 +209,7 @@ void readFile2(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
@@ -227,8 +227,9 @@ void readFile2(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
+             //printf("%f\n",1/vol);
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
@@ -245,8 +246,9 @@ void readFile2(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
+             //printf("%f\n",1/vol);
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
@@ -263,8 +265,9 @@ void readFile2(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
+             //printf("%f\n",1/vol);
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
@@ -281,8 +284,9 @@ void readFile2(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
+             //printf("%f\n",1/vol);
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
@@ -299,7 +303,7 @@ void readFile2(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
@@ -335,7 +339,7 @@ void getDensities(){
       temp2[2] = points[j][2] - vic[2];
       temp = product(matriz,temp2);
       if( (temp[0] >= 0 ) && (temp[1] >= 0 ) && (temp[2] >= 0 ) && (temp[0] - 1 <= 0)  && (temp[1] - 1 <= 0) && (temp[2] - 1 <= 0) ){
-        densities[j] += 1/vol;
+        densities[j] += fabs(1/vol);
       }
       free(temp);
     }
