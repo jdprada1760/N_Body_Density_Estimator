@@ -214,6 +214,8 @@ void readFile2(FILE* data){
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
+             //printf("La inversa de la matriz es: \n%f  %f  %f\n%f  %f  %f\n%f  %f  %f\n", matrices[g%7][0],  matrices[g%7][1],  matrices[g%7][2],
+             //matrices[g%7][3],  matrices[g%7][4],  matrices[g%7][5],  matrices[g%7][6],  matrices[g%7][7],  matrices[g%7][8]);
              g++;
            }
            //------------------------------------------------------------------------------
@@ -315,6 +317,9 @@ void readFile2(FILE* data){
      }
    }
    realnTh = g;
+   //for(i = 0; i< g; i++){
+     //printf("La inversa de la matriz es: \n%f  %f  %f\n%f  %f  %f\n%f  %f  %f\n", matrices[i][0],  matrices[i][1],  matrices[i][2], matrices[i][3],  matrices[i][4],  matrices[i][5],  matrices[i][6],  matrices[i][7],  matrices[i][8]);
+   //}
    printf("Last Tetrahedron: %d\n", g);
    printf("Time elapsed: %f\n", (float)(time(NULL) - start));
  }
@@ -390,9 +395,9 @@ float* product(float* m1, float* b1){
   float *m = m1;
   float *b = b1;
   float* ans = malloc(9*sizeof(float));
-  ans[0] = m[0]*b[0] + m[3]*b[1] + m[6]*b[2];
-  ans[1] = m[1]*b[0] + m[4]*b[1] + m[7]*b[2];
-  ans[2] = m[2]*b[0] + m[5]*b[1] + m[8]*b[2];
+  ans[0] = m[0]*b[0] + m[1]*b[1] + m[2]*b[2];
+  ans[1] = m[3]*b[0] + m[4]*b[1] + m[5]*b[2];
+  ans[2] = m[6]*b[0] + m[7]*b[1] + m[8]*b[2];
   return ans;
 }
 /*
