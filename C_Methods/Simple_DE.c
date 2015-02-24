@@ -155,7 +155,11 @@ void readFile2(FILE* data){
   for( i = 0; i < count; i++){
     points[i] = malloc(3*sizeof(float));
   }
+  // Aparte memoria para densities y llena el arreglo de ceros
   densities = malloc(count*sizeof(float));
+  for( i = 0; i < count; i++){
+    densities[i] = 0;
+  }
   npoints = count;
   count = 0;
   do{
