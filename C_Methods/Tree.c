@@ -13,7 +13,7 @@
  * Metodos
  */
 void addToList(int i);
-
+Nodo mkTree(int L, Nodo ini);
 /*
  * Lista simplemente encadenada
  */
@@ -34,7 +34,7 @@ typedef struct List{
  */
 typedef struct Nodo{
   // El padre
-  Struct Nodo dad;
+  //struct Nodo dad;
   // El hijo izquierdo
   struct Nodo left;
   // El ultimo hijo
@@ -48,7 +48,7 @@ typedef struct Nodo{
   // Final del espacio
   float fin;
   // La dimension de restriccion: es un entero   n%3
-  int dim;
+  //int dim;
 };
 
 /*
@@ -62,3 +62,20 @@ void cat(List lista, List lista2){
   lista.last.next = lista2;
   lista.last = lista2.last;
 }
+
+/*
+ * Crea un arbol, binario altura L
+ */
+ Nodo mkTree(int L, Nodo ini){
+   if( L == 0){
+     return ini;
+   }
+   else{
+     L--;
+     Nodo ini2 = ini;
+     Nodo new =  {ini,ini2, NULL,0,0,0};
+     new.left = ini;
+     new.right = ini2;
+     return mkTree(L,new);
+   }
+ }
