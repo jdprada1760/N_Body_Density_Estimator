@@ -35,7 +35,7 @@ struct Nodo{
   // El ultimo hijo
   struct Nodo* right;
   // La lista que guarda los tetraedros contenidos en el espacio definido por este nodo
-  struct List thdrons;
+  struct List* thdrons;
   // El numero de tetraedros que hay de este nodo en adelante
   //unsigned int n;
   // Inicio del espacio
@@ -52,18 +52,17 @@ typedef struct Nodo Nodo;
 //------------------------------------------------------------------------------
 
 /*
- * Inicializa un nodo vacio
-Nodo iniNodo(){
-  Nodo nodo;
-  nodo.left = &nodoI;
-  nodo.right = &nodoD;
-  nodo.thdrons = lista;
-  nodo.n = n;
-  nodo.ini = ini;
-  nodo.fin = fin;
+ * Inicializa un nodo vacio con los límites dados
+ */
+Nodo* iniNodo(float ini, float fin){
+  Nodo *nodo = malloc(sizeof(Nodo));
+  nodo->left = 0;
+  nodo->right = 0;
+  nodo->thdrons = 0;
+  nodo->ini = ini;
+  nodo->fin = fin;
   return nodo;
 }
-*/
 
 /*
  * Inicializa una lista vacía dado un índice;
@@ -76,9 +75,6 @@ List* iniList( int index ){
   li->last = li;
   return li;
 }
-
-
-
 
 /*
  * Concatena lista2 a lista
@@ -93,21 +89,25 @@ void cat(List* lista, List* lista2){
 }
 
 /*
- * Crea un arbol, binario altura L
-struct Nodo mkTree(int L,Nodo ini){
-   if( L == 0){
-     return ini;
-   }
-   else{
-     L--;
-     Nodo ini2 = ini;
-     Nodo new;
-     new.left = &ini;
-     new.right = &ini2;
-     return mkTree(L,new);
-   }
-}*/
+ * Añade un nuevo elemento a la lista
+ */
+void add(List* lista, unsigned int index){
+  // Aumenta el numero de elementos en la lista primera.
+  List *li = malloc(sizeof(List));
+  li->next = 0;
+  li->n = 1;
+  li->index = index;
+  li->last = 0;
+  lista->n = lista->n +1;
+  // Crea el elemento a la lista
+  // Añade el nuevo elemento en la cola y cambia la referencia al elemento final en el primer nodo
+  (lista->last)->next = li;
+  lista->last = li;
+}
 
+/*
+ * Imprime una lista
+ */
 void printList(List* lista){
   List *l = lista;
   do{
@@ -148,5 +148,20 @@ int main(){
   printf("Longitud: L1=%d\n", lista1->n);
   printList(lista1);
 
+
+  // Prueba del método add to list
+  List *lista5 = iniList(0);
+  int i;
+  for(i = 1; i < 21; i++){
+    add(lista5,i);
+  }
+  printf("Lista5:\n");
+  printf("Longitud: L5=%d\n", lista5->n);
+  printList(lista5);
+
+  cat(lista1,lista5);
+  printf("Lista1:\n");
+  printf("Longitud: L1=%d\n", lista1->n);
+  printList(lista1);
   return 0;
 }
