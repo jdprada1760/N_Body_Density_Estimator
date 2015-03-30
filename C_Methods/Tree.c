@@ -7,6 +7,12 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#define xmin 0.0
+#define ymin 0.0
+#define zmin 0.0
+#define xmax 150000.0
+#define ymax 150000.0
+#define zmax 150000.0
 
 /*
  * Lista simplemente encadenada
@@ -116,9 +122,19 @@ void printList(List* lista){
   }while(l != 0);
 }
 
+Nodo* iniTree(int orden){
+  Nodo* Tree = iniNodo(0,0);
+  if(orden == 0){
+    return Tree;
+  }
+  orden--;
+  Tree->left = iniTree(orden);
+  Tree->right = iniTree(orden);
+  return Tree;
+}
 
 int main(){
-
+  /*
   // Prueba de inilist
   List *lista1 = iniList(1);
   List *lista2 = iniList(3);
@@ -163,5 +179,38 @@ int main(){
   printf("Lista1:\n");
   printf("Longitud: L1=%d\n", lista1->n);
   printList(lista1);
+  */
+  /*
+  Nodo* Tree = iniNodo(xmin,xmax);
+  // Primer Piso
+  Tree->left = iniNodo(xmin,xmax/2);
+  Tree->right = iniNodo(xmax/2,xmax);
+  // Segundo piso
+  Tree->left->left = iniNodo(ymin,ymax/2);
+  Tree->left->right = iniNodo(ymax/2,ymax);
+
+  Tree->right->left = iniNodo(ymin,ymax/2);
+  Tree->right->right = iniNodo(ymax/2,ymax);
+  // Tercer Piso
+  Tree->left->left->left = iniNodo(zmin,zmax/2);
+  Tree->left->left->right = iniNodo(zmax/2,zmax);
+
+  Tree->left->right->left = iniNodo(zmin,zmax/2);
+  Tree->left->right->right = iniNodo(zmax/2,zmax);
+
+
+  Tree->right->left->left = iniNodo(zmin,zmax/2);
+  Tree->right>left->right = iniNodo(zmax/2,zmax);
+
+  Tree->right->right->left = iniNodo(zmin,zmax/2);
+  Tree->right->right->right = iniNodo(zmax/2,zmax);
+  */
+  Nodo* Tree = iniTree(3);
+
+  Tree->left->left->left->thdrons = iniList(2);
+  Tree->right->left->left->thdrons = iniList(5);
+
+  printf("LLL: %d\n",Tree->left->left->left->thdrons->index);
+  printf("RLL: %d\n",Tree->right->left->left->thdrons->index);
   return 0;
 }

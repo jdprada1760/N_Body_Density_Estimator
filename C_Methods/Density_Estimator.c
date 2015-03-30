@@ -1,5 +1,6 @@
 /*
- * Programa que imprime la densidad de una simulacion dada por fstate en un conjunto de puntos dados.
+ * Programa que imprime la densidad de una simulacion dada por fstate en un conjunto de puntos dados. (Sin recurrir a una estructura
+ * de datos para minimizar el problema)
  * Para incluir la libreria de algebra lineal: cc filename.c -o out.x libLinalg.a
  */
 
@@ -12,20 +13,73 @@
 // points: El archivo con los puntos donde se quiere estimar la densidad
 // towrite: El archivo final con la densidad en dichos puntos
 #define man "./estimar.x finalState points toWrite"
-#define n pow(128,3)
-#define nTh 6*pow(127,3)
+#define nTot 1.0*pow(128,3)
+#define nTh 6.0*pow(127,3)
+#define mass 1.0
+
+//----------------------------------------
+//   Arbol ( Y su respectiva lista )
+//----------------------------------------
+/*
+ * Lista simplemente encadenada
+ */
+struct List{
+  // El hijo proximo
+  struct List* next;
+  // El ultimo hijo
+  struct List* last;
+  // El indice que guarda el tetraedro correspondiente
+  //(Permite sacar las matrices, los vecref y los volumenes)
+  int index;
+  // Guarda la longitud de la lista (solo la guarda el primero, o ahi vemos)
+  unsigned int n;
+};
+typedef struct List List;
+
+/*
+ * Arbol
+ */
+struct Nodo{
+  // El padre
+  //struct Nodo dad;
+  // El hijo izquierdo
+  struct Nodo* left;
+  // El ultimo hijo
+  struct Nodo* right;
+  // La lista que guarda los tetraedros contenidos en el espacio definido por este nodo
+  struct List* thdrons;
+  // El numero de tetraedros que hay de este nodo en adelante
+  //unsigned int n;
+  // La dimension de restriccion: es un entero   n%3
+  //int dim;
+};
+typedef struct Nodo Nodo;
+Nodo* Tree;
 
 //----------------------------------------
 //   Declaracion Metodos
 //----------------------------------------
-void mkThdrons();
 void allocate_All();
 void readFile(FILE* data);
+void readFile2(FILE* data);
+void mkThdrons();
+void getDensities();
+void writeFile(FILE * data);
+
 // Linalg
 float* product(float* m1, float* b1);
 float* cross(float* a1,float* b1);
 float det(float* m1);
 float* inverse(float* m1);
+
+// Arbol
+Nodo* iniNodo();
+List* iniList( int index );
+void iniTree();
+void cat(List* lista, List* lista2);
+void add(List* lista, unsigned int index);
+void printList(List* lista);
+
 
 //----------------------------------------
 //   Variables generales
@@ -38,24 +92,63 @@ float* volumes;
 // El estado final de la simulacion
 float** fstate;
 unsigned int* Ids;
-
-
-
+// Contenedoras de los puntos a samplear 3*i +j
+float** points;
+unsigned int npoints;
+float* densities;
+// Numero total de tetraedros (Sin contar los tetraedros degenerados)
+unsigned int realnTh;
+// Los límites de la caja
+float* rmin;
+float* rmax;
 int main(int argc, char **argv){
-  time_t start = time(NULL);
-  // EL archivo donde se guardaron las condiciones finales
+  // Inicializa los límites de la caja
+  rmin = malloc(3*sizeof(float));
+  rmax = malloc(3*sizeof(float));
+  rmin[0] = 0.0;
+  rmin[1] = 0.0;
+  rmin[2] = 0.0;
+  rmax[0] = 150000.0;
+  rmax[1] = 150000.0;
+  rmax[2] = 150000.0;
+  // time_t start = time(NULL);
+  // EL archivo donde se guardaron las condiciones finales y los puntos a samplear
   FILE *data;
-  char *name = argv[1];
+  FILE *LoLpoints;
+  FILE *toWrite;
+  char *nameData = argv[1];
+  char *namePoints = argv[2];
+  char *nametoWrite = argv[3];
   // Aparta memoria
   allocate_All();
   // El archivo de texto de condiciones iniciales y de evolucion en el tiempo
-  data = fopen( name, "r" );
+  data = fopen( nameData, "r" );
   // Lee el archivo data a fstate
   readFile(data);
+  fclose(data);
   // Crea los tetraedros definidos por matrices, refvecs y volumes
   mkThdrons();
-  printf("Total Time elapsed: %f\n", (double)(time(NULL) - start));
+  // Desaloja la memoria utilizada por fstate y Ids
+  free(Ids);
+  int i;
+  for( i = 0; i < nTot; i++){
+    free(fstate[i]);
+  }
+  free(fstate);
+  //printf("Total Time elapsed: %f\n", (double)(time(NULL) - start));
+  // Lee los puntos para evaluar la densidad
+  LoLpoints = fopen( namePoints, "r" );
+  // inicializa el arbol de tetraedros antes de llenarlo
+  iniTree();
+  readFile2(LoLpoints);
+  fclose(LoLpoints);
+  getDensities();
+  // Imprime los puntos en un archivo
+  toWrite = fopen( nametoWrite, "w");
+  writeFile(toWrite);
+  fclose(toWrite);
   return 0;
+
 }
 
 //----------------------------------------
@@ -76,20 +169,20 @@ void allocate_All(){
     refVecs[i] = malloc(3*sizeof(float));
   }
   volumes = malloc(nTh*sizeof(float));
-  fstate = malloc(n*sizeof(float*));
-  for( i = 0; i < n; i++){
+  fstate = malloc(nTot*sizeof(float*));
+  for( i = 0; i < nTot; i++){
     fstate[i] = malloc(3*sizeof(float));
   }
-  Ids = malloc(n*sizeof(unsigned int));
+  Ids = malloc(nTot*sizeof(unsigned int));
   printf("Time elapsed: %f\n", (float)(time(NULL) - start));
 }
 
 /*
- * Lee el archivo y lo guarda en fstate
+ * Lee el archivo de condiciones finales y lo guarda en fstate
  */
 void readFile(FILE* data){
   time_t start = time(NULL);
-  printf("Reading file...\n");
+  printf("Reading final state...\n");
   float tmp;
   float x,y,z;
   unsigned int id;
@@ -100,22 +193,60 @@ void readFile(FILE* data){
     fstate[id-1][1] = y;
     fstate[id-1][2] = z;
   }while( test!=EOF );
+  printf("Last ID: %d\n", id);
+  printf("Time elapsed: %f\n", (float)(time(NULL) - start));
+}
+
+/*
+ * Lee el archivo de puntos y lo guarda points
+ */
+void readFile2(FILE* data){
+  time_t start = time(NULL);
+  printf("Reading points...\n");
+  float x,y,z;
+  // Cuenta cuantos puntos hay para poder apartar memoria
+  unsigned int count = 0;
+  int test;
+  do{
+    test = fscanf(data, "%f %f %f\n", &x, &y, &z);
+    count ++;
+  }while( test!=EOF );
+  // Aparta memoria para points y llena el arreglo
+  points = malloc(count*sizeof(float*));
+  unsigned int i;
+  for( i = 0; i < count; i++){
+    points[i] = malloc(3*sizeof(float));
+  }
+  // Aparte memoria para densities y llena el arreglo de ceros
+  densities = malloc(count*sizeof(float));
+  for( i = 0; i < count; i++){
+    densities[i] = 0;
+  }
+  npoints = count;
+  count = 0;
+  do{
+    test = fscanf(data, "%f %f %f\n", &x, &y, &z);
+    points[count][0] = x;
+    points[count][1] = y;
+    points[count][2] = z;
+    count++;
+  }while( test!=EOF );
   printf("Time elapsed: %f\n", (float)(time(NULL) - start));
 }
 
 /*
  * Llena el array de matrices y tetraedros
  */
- void mkThdrons(){
+void mkThdrons(){
    time_t start = time(NULL);
    printf("Making tetrahedrons...\n");
    // Longitud de la arista de los cubos
-   unsigned int L = 16;
+   unsigned int L = 128;
    // Iteradores
    unsigned int l,i,j,k,g;
    g = 0;
    // numero de cubos en la simulacion
-   unsigned int nit = n/pow(L,3);
+   unsigned int nit = nTot/pow(L,3);
    for( l = 0; l < nit; l++ ){
      for( i = 0; i < L-1; i++ ){
        for( j = 0; j < L-1; j++ ){
@@ -144,11 +275,13 @@ void readFile(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
+             //printf("La inversa de la matriz es: \n%f  %f  %f\n%f  %f  %f\n%f  %f  %f\n", matrices[g%7][0],  matrices[g%7][1],  matrices[g%7][2],
+             //matrices[g%7][3],  matrices[g%7][4],  matrices[g%7][5],  matrices[g%7][6],  matrices[g%7][7],  matrices[g%7][8]);
              g++;
            }
            //------------------------------------------------------------------------------
@@ -162,8 +295,9 @@ void readFile(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
+             //printf("%f\n",1/vol);
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
@@ -180,8 +314,9 @@ void readFile(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
+             //printf("%f\n",1/vol);
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
@@ -198,8 +333,9 @@ void readFile(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
+             //printf("%f\n",1/vol);
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
@@ -216,8 +352,9 @@ void readFile(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
+             //printf("%f\n",1/vol);
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
@@ -234,7 +371,7 @@ void readFile(FILE* data){
            mv[2] = fstate[point4][0] - fstate[point][0];
            mv[5] = fstate[point4][1] - fstate[point][1];
            mv[8] = fstate[point4][2] - fstate[point][2];
-           vol = det(mv)/2;
+           vol = det(mv)/(2*pow(10,10));
            if( vol != 0){
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
@@ -245,9 +382,188 @@ void readFile(FILE* data){
        }
      }
    }
+   realnTh = g;
+   //for(i = 0; i< g; i++){
+     //printf("La inversa de la matriz es: \n%f  %f  %f\n%f  %f  %f\n%f  %f  %f\n", matrices[i][0],  matrices[i][1],  matrices[i][2], matrices[i][3],  matrices[i][4],  matrices[i][5],  matrices[i][6],  matrices[i][7],  matrices[i][8]);
+   //}
+   printf("Last Tetrahedron: %d\n", g);
    printf("Time elapsed: %f\n", (float)(time(NULL) - start));
  }
 
+/*
+ * Llena el arbol con los tetraedros
+ * pi : la posicion del punto en fstate
+ * la posicion del tetraedro en el array de tetraedros
+ */
+void add_to_Tree(int p1, int p2, int p3, int p4, int g){
+  int j;
+  // Marca la mitad de la dimension j en la que se encuentra
+  float mid;
+  // actualiza la rama en la que esta el punto
+  Nodo* actual = Tree;
+  for(j = 0; j < 3; j++){
+    mid = (rmin[j] + rmax[j])/2;
+    // Si esta en un lado, toma una rama, si no, no actualiza la rama
+
+    if((fstate[p1][j] >= mid) && (fstate[p2][j] >= mid) && (fstate[p3][j] >= mid) && (fstate[p4][j] >= mid)){
+      actual = actual->right;
+    }
+    else if((fstate[p1][j] < mid) && (fstate[p2][j] < mid) && (fstate[p3][j] < mid) && (fstate[p4][j] < mid)){
+      actual = actual->left;
+    }
+  }
+  // Inserta el tetraedro donde haya quedado
+  if(actual->thdrons == 0){
+    actual->thdrons = iniList(g);
+  }
+  else{
+    cat(actual->thdrons, iniList(g));
+  }
+}
+
+/*
+ * Samplea las densidades en las posiciones dadas
+ */
+void getDensities(){
+  time_t start = time(NULL);
+  printf("Getting Densities...\n");
+  // Indices del proceso
+  int i,j;
+  float* temp;
+  float* temp2 = malloc(3*sizeof(float));
+  for( i = realnTh-1; i >= 0; i-- ){
+    float vol = volumes[i];
+    float* vic = refVecs[i];
+    float* matriz = matrices[i];
+    for( j = npoints-1; j >= 0; j--){
+      temp2[0] = points[j][0] - vic[0];
+      temp2[1] = points[j][1] - vic[1];
+      temp2[2] = points[j][2] - vic[2];
+      temp = product(matriz,temp2);
+      if( (temp[0] >= 0 ) && (temp[1] >= 0 ) && (temp[2] >= 0 ) && (temp[0] - 1 <= 0)  && (temp[1] - 1 <= 0) && (temp[2] - 1 <= 0) ){
+        densities[j] += fabs(1/vol);
+      }
+      free(temp);
+    }
+  }
+  printf("Time elapsed: %f\n", (float)(time(NULL) - start));
+}
+
+/*
+ * Escribe las densidades encontradas
+ */
+void writeFile(FILE * data){
+  time_t start = time(NULL);
+  printf("Writing Densities...\n");
+  unsigned int i;
+  for( i = 0; i < npoints; i++){
+    fprintf(data, "%f\n", densities[i]);
+  }
+  printf("Time elapsed: %f\n", (float)(time(NULL) - start));
+}
+
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------------
+//--- Metodos inicializadores del arbol y la lista -----------------------------
+//------------------------------------------------------------------------------
+
+/*
+ * Inicializa un nodo vacio con los límites dados
+ */
+Nodo* iniNodo(){
+  Nodo *nodo = malloc(sizeof(Nodo));
+  nodo->left = 0;
+  nodo->right = 0;
+  nodo->thdrons = 0;
+  return nodo;
+}
+
+/*
+ * Inicializa una lista vacía dado un índice;
+ */
+List* iniList( int index ){
+  List *li = malloc(sizeof(List));
+  li->next = 0;
+  li->n = 1;
+  li->index = index;
+  li->last = li;
+  return li;
+}
+
+/*
+ * Inicializun arbol vacío de orden n
+ */
+Nodo* iniTree(int orden){
+  // Revisar
+  Nodo* tree = iniNodo();
+  if(orden == 0){
+    return tree;
+  }
+  orden--;
+  tree->left = iniTree(orden);
+  tree->right = iniTree(orden);
+  return tree;
+
+}
+
+/*
+ * Concatena lista2 a lista
+ */
+void cat(List* lista, List* lista2){
+  // Aumenta el numero de elementos en la lista primera.
+  lista->n = lista->n + lista2->n;
+  // Crea el elemento a la lista
+  // Añade el nuevo elemento en la cola y cambia la referencia al elemento final en el primer nodo
+  (lista->last)->next = lista2;
+  lista->last = lista2->last;
+}
+
+/*
+ * Añade un nuevo elemento a la lista
+ */
+void add(List* lista, unsigned int index){
+  // Aumenta el numero de elementos en la lista primera.
+  List *li = malloc(sizeof(List));
+  li->next = 0;
+  li->n = 1;
+  li->index = index;
+  li->last = 0;
+  lista->n = lista->n +1;
+  // Crea el elemento a la lista
+  // Añade el nuevo elemento en la cola y cambia la referencia al elemento final en el primer nodo
+  (lista->last)->next = li;
+  lista->last = li;
+}
+
+/*
+ * Imprime una lista
+ */
+void printList(List* lista){
+  List *l = lista;
+  do{
+    printf("-->%d\n", l->index );
+    l = l->next;
+  }while(l != 0);
+}
 
 //---------------------------------------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------------------------------------
@@ -279,9 +595,9 @@ float* product(float* m1, float* b1){
   float *m = m1;
   float *b = b1;
   float* ans = malloc(9*sizeof(float));
-  ans[0] = m[0]*b[0] + m[3]*b[1] + m[6]*b[2];
-  ans[1] = m[1]*b[0] + m[4]*b[1] + m[7]*b[2];
-  ans[2] = m[2]*b[0] + m[5]*b[1] + m[8]*b[2];
+  ans[0] = m[0]*b[0] + m[1]*b[1] + m[2]*b[2];
+  ans[1] = m[3]*b[0] + m[4]*b[1] + m[5]*b[2];
+  ans[2] = m[6]*b[0] + m[7]*b[1] + m[8]*b[2];
   return ans;
 }
 /*
