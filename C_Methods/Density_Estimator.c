@@ -65,6 +65,7 @@ void readFile2(FILE* data);
 void mkThdrons();
 void getDensities();
 void writeFile(FILE * data);
+void add_to_Tree(int p1, int p2, int p3, int p4, int g);
 
 // Linalg
 float* product(float* m1, float* b1);
@@ -75,7 +76,7 @@ float* inverse(float* m1);
 // Arbol
 Nodo* iniNodo();
 List* iniList( int index );
-void iniTree();
+Nodo* iniTree( int orden );
 void cat(List* lista, List* lista2);
 void add(List* lista, unsigned int index);
 void printList(List* lista);
@@ -126,7 +127,9 @@ int main(int argc, char **argv){
   // Lee el archivo data a fstate
   readFile(data);
   fclose(data);
-  // Crea los tetraedros definidos por matrices, refvecs y volumes
+  // inicializa el arbol de tetraedros antes de llenarlo
+  iniTree(3);
+  // Crea los tetraedros definidos por matrices, refvecs y volumes y los mete en el arbol
   mkThdrons();
   // Desaloja la memoria utilizada por fstate y Ids
   free(Ids);
@@ -138,8 +141,6 @@ int main(int argc, char **argv){
   //printf("Total Time elapsed: %f\n", (double)(time(NULL) - start));
   // Lee los puntos para evaluar la densidad
   LoLpoints = fopen( namePoints, "r" );
-  // inicializa el arbol de tetraedros antes de llenarlo
-  iniTree();
   readFile2(LoLpoints);
   fclose(LoLpoints);
   getDensities();
@@ -282,6 +283,7 @@ void mkThdrons(){
              volumes[g] = vol;
              //printf("La inversa de la matriz es: \n%f  %f  %f\n%f  %f  %f\n%f  %f  %f\n", matrices[g%7][0],  matrices[g%7][1],  matrices[g%7][2],
              //matrices[g%7][3],  matrices[g%7][4],  matrices[g%7][5],  matrices[g%7][6],  matrices[g%7][7],  matrices[g%7][8]);
+             add_to_Tree(point, point2, point3, point4, g);
              g++;
            }
            //------------------------------------------------------------------------------
@@ -301,6 +303,7 @@ void mkThdrons(){
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
+             add_to_Tree(point, point2, point3, point4, g);
              g++;
            }
            //------------------------------------------------------------------------------
@@ -320,6 +323,7 @@ void mkThdrons(){
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
+             add_to_Tree(point, point2, point3, point4, g);
              g++;
            }
            //------------------------------------------------------------------------------
@@ -339,6 +343,7 @@ void mkThdrons(){
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
+             add_to_Tree(point, point2, point3, point4, g);
              g++;
            }
            //------------------------------------------------------------------------------
@@ -358,6 +363,7 @@ void mkThdrons(){
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
+             add_to_Tree(point, point2, point3, point4, g);
              g++;
            }
            //------------------------------------------------------------------------------
@@ -376,6 +382,7 @@ void mkThdrons(){
              refVecs[g] = rv;
              matrices[g] = inverse(mv);
              volumes[g] = vol;
+             add_to_Tree(point, point2, point3, point4, g);
              g++;
            }
          }
@@ -428,23 +435,44 @@ void getDensities(){
   time_t start = time(NULL);
   printf("Getting Densities...\n");
   // Indices del proceso
-  int i,j;
+  int i,j,k;
   float* temp;
   float* temp2 = malloc(3*sizeof(float));
-  for( i = realnTh-1; i >= 0; i-- ){
-    float vol = volumes[i];
-    float* vic = refVecs[i];
-    float* matriz = matrices[i];
-    for( j = npoints-1; j >= 0; j--){
-      temp2[0] = points[j][0] - vic[0];
-      temp2[1] = points[j][1] - vic[1];
-      temp2[2] = points[j][2] - vic[2];
+  // Marca la mitad de la dimension j en la que se encuentra
+  float mid;
+  // actualiza la rama en la que esta el punto y concatena las listas de tetrahedros que probablemente contengan al punto
+  // segun su ubicacion
+  for( k = npoints-1; k >= 0; k--){
+    List* efect = Tree->thdrons;
+    Nodo* actual = Tree;
+    for(j = 0; j < 3; j++){
+      mid = (rmin[j] + rmax[j])/2;
+      // Si esta en un lado, toma una rama, si no, no actualiza la rama
+
+      if( points[k][j] >= mid ){
+        actual = actual->right;
+      }
+      else if( points[k][j] >= mid ){
+        actual = actual->left;
+      }
+      cat(efect, actual->thdrons);
+    }
+    do{
+      i = efect->index;
+      float vol = volumes[i];
+      float* vic = refVecs[i];
+      float* matriz = matrices[i];
+
+      temp2[0] = points[k][0] - vic[0];
+      temp2[1] = points[k][1] - vic[1];
+      temp2[2] = points[k][2] - vic[2];
       temp = product(matriz,temp2);
       if( (temp[0] >= 0 ) && (temp[1] >= 0 ) && (temp[2] >= 0 ) && (temp[0] - 1 <= 0)  && (temp[1] - 1 <= 0) && (temp[2] - 1 <= 0) ){
         densities[j] += fabs(1/vol);
       }
       free(temp);
-    }
+      efect = efect->next;
+    }while(efect != 0);
   }
   printf("Time elapsed: %f\n", (float)(time(NULL) - start));
 }
