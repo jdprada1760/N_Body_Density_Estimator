@@ -212,7 +212,7 @@ void readFile2(FILE* data){
   do{
     test = fscanf(data, "%f %f %f\n", &x, &y, &z);
     count ++;
-  }while( test!=EOF )
+  }while( test!=EOF );
   count--; // Se pasa en 1 debido a la formacion del while
   // Aparta memoria para points y llena el arreglo
   points = malloc(count*sizeof(float*));
@@ -229,7 +229,7 @@ void readFile2(FILE* data){
   printf("Numero de puntos contados: %d\n",npoints);
   // Rewind para leer otra vez
   rewind(data);
-  for(count = 0; count < npoints; count++){}
+  for(count = 0; count < npoints; count++){
     fscanf(data, "%f %f %f\n", &x, &y, &z);
     points[count][0] = x;
     points[count][1] = y;
