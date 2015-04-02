@@ -129,7 +129,9 @@ int main(int argc, char **argv){
   // inicializa el arbol de tetraedros antes de llenarlo
   Tree = iniTree(3);
   // Crea los tetraedros definidos por matrices, refvecs y volumes y los mete en el arbol
-  mkThdrons();
+
+  //mkThdrons();
+
   // Desaloja la memoria utilizada por fstate y Ids
   free(Ids);
   int i;
@@ -210,7 +212,8 @@ void readFile2(FILE* data){
   do{
     test = fscanf(data, "%f %f %f\n", &x, &y, &z);
     count ++;
-  }while( test!=EOF );
+  }while( test!=EOF )
+  count--; // Se pasa en 1 debido a la formacion del while
   // Aparta memoria para points y llena el arreglo
   points = malloc(count*sizeof(float*));
   unsigned int i;
@@ -223,14 +226,16 @@ void readFile2(FILE* data){
     densities[i] = 0;
   }
   npoints = count;
-  count = 0;
-  do{
-    test = fscanf(data, "%f %f %f\n", &x, &y, &z);
+  printf("Numero de puntos contados: %d\n",npoints);
+  // Rewind para leer otra vez
+  rewind(data);
+  for(count = 0; count < npoints; count++){}
+    fscanf(data, "%f %f %f\n", &x, &y, &z);
     points[count][0] = x;
     points[count][1] = y;
     points[count][2] = z;
-    count++;
-  }while( test!=EOF );
+  }
+  printf("Numero de puntos leidos: %d",count);
   printf("Time elapsed: %f\n", (float)(time(NULL) - start));
 }
 
@@ -444,7 +449,7 @@ void getDensities(){
   float mid;
   // actualiza la rama en la que esta el punto y concatena las listas de tetrahedros que probablemente contengan al punto
   // segun su ubicacion
-  for( k = npoints-1; k >= 0; k--){
+  for( k = 0; k < npoints; k++){
     printf("%d\n", k);
     List** efect = malloc(4*sizeof(List*));
     efect[0] = Tree->thdrons;
