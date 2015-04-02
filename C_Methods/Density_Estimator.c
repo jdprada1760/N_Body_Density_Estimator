@@ -77,7 +77,6 @@ float* inverse(float* m1);
 Nodo* iniNodo();
 List* iniList( int index );
 Nodo* iniTree( int orden );
-void cat(List* lista, List* lista2);
 void add(List* lista, unsigned int index);
 void printList(List* lista);
 
@@ -447,53 +446,40 @@ void getDensities(){
   // segun su ubicacion
   for( k = npoints-1; k >= 0; k--){
     printf("%d\n", k);
-    List* efect = Tree->thdrons;
+    List** efect = malloc(4*sizeof(List*));
+    efect[0] = Tree->thdrons;
     Nodo* actual = Tree;
     for(j = 0; j < 3; j++){
       mid = (rmin[j] + rmax[j])/2;
-      // Si esta en un lado, toma una rama, si no, no actualiza la rama
-
       if( points[k][j] >= mid ){
         actual = actual->right;
       }
       else{
         actual = actual->left;
       }
-      // Añade la nueva lista al arbol
-      if(efect == actual->thdrons){
-        printf("ERROOOOOOR");
-      }
-      cat(efect, actual->thdrons);
+      // Añade la nueva lista al arbol (hace un deep copy)
+      efect[j+1] = actual->thdrons;
 
     }
-    /*
-     *   Averigua la longitud de la lista
-     */
-     int l = 0;
-     List* e2 = efect;
-     do{
-       //printf("%p\n", e2);
-       l++;
-       e2 = e2->next;
-     }while(e2 != 0);
-     printf("La longitud de la lista es de: %d\n", l);
+    for( j = 0; j < 4; j++ ){
+      List* ini = efect[j];
+      do{
+        i = ini->index;
+        float vol = volumes[i];
+        float* vic = refVecs[i];
+        float* matriz = matrices[i];
 
-    do{
-      i = efect->index;
-      float vol = volumes[i];
-      float* vic = refVecs[i];
-      float* matriz = matrices[i];
-
-      temp2[0] = points[k][0] - vic[0];
-      temp2[1] = points[k][1] - vic[1];
-      temp2[2] = points[k][2] - vic[2];
-      temp = product(matriz,temp2);
-      if( (temp[0] >= 0 ) && (temp[1] >= 0 ) && (temp[2] >= 0 ) && (temp[0] - 1 <= 0)  && (temp[1] - 1 <= 0) && (temp[2] - 1 <= 0) ){
-        densities[j] += fabs(1/vol);
-      }
-      free(temp);
-      efect = efect->next;
-    }while(efect != 0);
+        temp2[0] = points[k][0] - vic[0];
+        temp2[1] = points[k][1] - vic[1];
+        temp2[2] = points[k][2] - vic[2];
+        temp = product(matriz,temp2);
+        if( (temp[0] >= 0 ) && (temp[1] >= 0 ) && (temp[2] >= 0 ) && (temp[0] - 1 <= 0)  && (temp[1] - 1 <= 0) && (temp[2] - 1 <= 0) ){
+          densities[k] += fabs(1/vol);
+        }
+        free(temp);
+        ini = ini->next;
+      }while(ini != 0);
+    }
   }
   printf("Time elapsed: %f\n", (float)(time(NULL) - start));
 }
@@ -570,25 +556,27 @@ Nodo* iniTree(int orden){
   tree->left = iniTree(orden);
   tree->right = iniTree(orden);
   return tree;
-
 }
 
 /*
  * Concatena lista2 a lista
- */
-void cat(List* lista, List* lista2){
+List** cat(List* lista, List* lista2){
   if(lista != 0 && lista2 != 0){
     // Aumenta el numero de elementos en la lista primera.
     //lista->n = lista->n + lista2->n;
     // Crea el elemento a la lista
     // Añade el nuevo elemento en la cola y cambia la referencia al elemento final en el primer nodo
-    (lista->last)->next = lista2;
-    lista->last = lista2->last;
+    //(lista->last)->next = lista2;
+    //lista->last = lista2->last;
+    do{
+
+    }
   }
   else if(lista == 0 && lista2 != 0){
     lista = lista2;
   }
 }
+*/
 
 /*
  * Añade un nuevo elemento a la lista
