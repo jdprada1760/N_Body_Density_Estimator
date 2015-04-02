@@ -32,7 +32,7 @@ struct List{
   //(Permite sacar las matrices, los vecref y los volumenes)
   int index;
   // Guarda la longitud de la lista (solo la guarda el primero, o ahi vemos)
-  unsigned int n;
+  //unsigned int n;
 };
 typedef struct List List;
 
@@ -128,7 +128,7 @@ int main(int argc, char **argv){
   readFile(data);
   fclose(data);
   // inicializa el arbol de tetraedros antes de llenarlo
-  iniTree(3);
+  Tree = iniTree(3);
   // Crea los tetraedros definidos por matrices, refvecs y volumes y los mete en el arbol
   mkThdrons();
   // Desaloja la memoria utilizada por fstate y Ids
@@ -418,13 +418,16 @@ void add_to_Tree(int p1, int p2, int p3, int p4, int g){
     else if((fstate[p1][j] < mid) && (fstate[p2][j] < mid) && (fstate[p3][j] < mid) && (fstate[p4][j] < mid)){
       actual = actual->left;
     }
+    else{
+      j = 3;
+    }
   }
   // Inserta el tetraedro donde haya quedado
   if(actual->thdrons == 0){
     actual->thdrons = iniList(g);
   }
   else{
-    cat(actual->thdrons, iniList(g));
+    add(actual->thdrons, g);
   }
 }
 
@@ -443,6 +446,7 @@ void getDensities(){
   // actualiza la rama en la que esta el punto y concatena las listas de tetrahedros que probablemente contengan al punto
   // segun su ubicacion
   for( k = npoints-1; k >= 0; k--){
+    printf("%d\n", k);
     List* efect = Tree->thdrons;
     Nodo* actual = Tree;
     for(j = 0; j < 3; j++){
@@ -452,11 +456,28 @@ void getDensities(){
       if( points[k][j] >= mid ){
         actual = actual->right;
       }
-      else if( points[k][j] >= mid ){
+      else{
         actual = actual->left;
       }
+      // Añade la nueva lista al arbol
+      if(efect == actual->thdrons){
+        printf("ERROOOOOOR");
+      }
       cat(efect, actual->thdrons);
+
     }
+    /*
+     *   Averigua la longitud de la lista
+     */
+     int l = 0;
+     List* e2 = efect;
+     do{
+       //printf("%p\n", e2);
+       l++;
+       e2 = e2->next;
+     }while(e2 != 0);
+     printf("La longitud de la lista es de: %d\n", l);
+
     do{
       i = efect->index;
       float vol = volumes[i];
@@ -531,7 +552,6 @@ Nodo* iniNodo(){
 List* iniList( int index ){
   List *li = malloc(sizeof(List));
   li->next = 0;
-  li->n = 1;
   li->index = index;
   li->last = li;
   return li;
@@ -557,12 +577,17 @@ Nodo* iniTree(int orden){
  * Concatena lista2 a lista
  */
 void cat(List* lista, List* lista2){
-  // Aumenta el numero de elementos en la lista primera.
-  lista->n = lista->n + lista2->n;
-  // Crea el elemento a la lista
-  // Añade el nuevo elemento en la cola y cambia la referencia al elemento final en el primer nodo
-  (lista->last)->next = lista2;
-  lista->last = lista2->last;
+  if(lista != 0 && lista2 != 0){
+    // Aumenta el numero de elementos en la lista primera.
+    //lista->n = lista->n + lista2->n;
+    // Crea el elemento a la lista
+    // Añade el nuevo elemento en la cola y cambia la referencia al elemento final en el primer nodo
+    (lista->last)->next = lista2;
+    lista->last = lista2->last;
+  }
+  else if(lista == 0 && lista2 != 0){
+    lista = lista2;
+  }
 }
 
 /*
@@ -572,10 +597,10 @@ void add(List* lista, unsigned int index){
   // Aumenta el numero de elementos en la lista primera.
   List *li = malloc(sizeof(List));
   li->next = 0;
-  li->n = 1;
+  //li->n = 1;
   li->index = index;
-  li->last = 0;
-  lista->n = lista->n +1;
+  li->last = li;
+  //lista->n = lista->n +1;
   // Crea el elemento a la lista
   // Añade el nuevo elemento en la cola y cambia la referencia al elemento final en el primer nodo
   (lista->last)->next = li;
