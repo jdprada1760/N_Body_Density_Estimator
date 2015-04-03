@@ -130,7 +130,7 @@ int main(int argc, char **argv){
   Tree = iniTree(3);
   // Crea los tetraedros definidos por matrices, refvecs y volumes y los mete en el arbol
 
-  //mkThdrons();
+  mkThdrons();
 
   // Desaloja la memoria utilizada por fstate y Ids
   free(Ids);
