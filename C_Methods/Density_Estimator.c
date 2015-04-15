@@ -69,7 +69,6 @@ void add_to_Tree(int p1, int p2, int p3, int p4, int g);
 
 // Linalg
 float* product(float* m1, float* b1);
-float* cross(float* a1,float* b1);
 float det(float* m1);
 float* inverse(float* m1);
 
@@ -235,7 +234,7 @@ void readFile2(FILE* data){
     points[count][1] = y;
     points[count][2] = z;
   }
-  printf("Numero de puntos leidos: %d",count);
+  printf("Numero de puntos leidos: %d\n",count);
   printf("Time elapsed: %f\n", (float)(time(NULL) - start));
 }
 
@@ -263,7 +262,10 @@ void mkThdrons(){
            // Volumen del tetraedro
            float vol;
            // Vector de referencia (esquina del tetraedro)
-           float* rv = fstate[point];
+           float* rv = malloc(3*sizeof(float));
+           rv[0] = fstate[point][0];
+           rv[1] = fstate[point][1];
+           rv[2] = fstate[point][2];
            // Matriz de transformada baricentrica
            float* mv = malloc(9*sizeof(float));
            mv[0] = fstate[point2][0] - fstate[point][0];
@@ -473,6 +475,14 @@ void getDensities(){
         float vol = volumes[i];
         float* vic = refVecs[i];
         float* matriz = matrices[i];
+        //printf("-----------------------------------\n%f\n",vol);
+        /*
+        printf("-----------------------------------\n");
+        printf("%f   %f   %f\n", matriz[0], matriz[3], matriz[6]);
+        printf("%f   %f   %f\n", matriz[1], matriz[4], matriz[7]);
+        printf("%f   %f   %f\n", matriz[2], matriz[5], matriz[8]);
+        printf("-----------------------------------\n");
+        */
 
         temp2[0] = points[k][0] - vic[0];
         temp2[1] = points[k][1] - vic[1];
@@ -480,6 +490,7 @@ void getDensities(){
         temp = product(matriz,temp2);
         if( (temp[0] >= 0 ) && (temp[1] >= 0 ) && (temp[2] >= 0 ) && (temp[0] - 1 <= 0)  && (temp[1] - 1 <= 0) && (temp[2] - 1 <= 0) ){
           densities[k] += fabs(1/vol);
+          //printf("Loool\n");
         }
         free(temp);
         ini = ini->next;
@@ -564,26 +575,6 @@ Nodo* iniTree(int orden){
 }
 
 /*
- * Concatena lista2 a lista
-List** cat(List* lista, List* lista2){
-  if(lista != 0 && lista2 != 0){
-    // Aumenta el numero de elementos en la lista primera.
-    //lista->n = lista->n + lista2->n;
-    // Crea el elemento a la lista
-    // Añade el nuevo elemento en la cola y cambia la referencia al elemento final en el primer nodo
-    //(lista->last)->next = lista2;
-    //lista->last = lista2->last;
-    do{
-
-    }
-  }
-  else if(lista == 0 && lista2 != 0){
-    lista = lista2;
-  }
-}
-*/
-
-/*
  * Añade un nuevo elemento a la lista
  */
 void add(List* lista, unsigned int index){
@@ -640,22 +631,10 @@ void printList(List* lista){
 float* product(float* m1, float* b1){
   float *m = m1;
   float *b = b1;
-  float* ans = malloc(9*sizeof(float));
+  float* ans = malloc(3*sizeof(float));
   ans[0] = m[0]*b[0] + m[1]*b[1] + m[2]*b[2];
   ans[1] = m[3]*b[0] + m[4]*b[1] + m[5]*b[2];
   ans[2] = m[6]*b[0] + m[7]*b[1] + m[8]*b[2];
-  return ans;
-}
-/*
- * Retorna el producto cruz de dos vectores 3d
- */
-float* cross(float* a1,float* b1){
-  float *a = a1;
-  float *b = b1;
-  float* ans = malloc(9*sizeof(float));
-  ans[0] = a[1]*b[2] - a[2]*b[1];
-  ans[1] = b[0]*a[2] - b[2]*a[0];
-  ans[2] = a[0]*b[1] - a[1]*b[0];
   return ans;
 }
 /*
