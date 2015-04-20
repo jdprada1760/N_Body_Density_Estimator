@@ -452,7 +452,7 @@ void getDensities(){
   // actualiza la rama en la que esta el punto y concatena las listas de tetrahedros que probablemente contengan al punto
   // segun su ubicacion
   for( k = 0; k < npoints; k++){
-    printf("%d\n", k);
+    //printf("%d\n", k);
     List** efect = malloc(4*sizeof(List*));
     efect[0] = Tree->thdrons;
     Nodo* actual = Tree;
