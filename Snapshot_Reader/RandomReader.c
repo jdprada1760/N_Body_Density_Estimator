@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#define man "./reader.x toRead toWrite n seed"
+#define man "./reader.x toRead"
 
 void readBinary(char* name);
 
@@ -44,26 +44,6 @@ struct Particle* P;
 int main(int argc, char **argv){
   printf("Begin...\n");
   readBinary( argv[1] );
-  FILE *fila = fopen( argv[2], "w" );
-  if(!fila){
-    printf("Could not open WriteFile");
-  }
-  // Imprime un archivo con las posiciones, velocidades, masas y IDs de una nésima fracción de partículas
-  int seed = atoi( argv[4] );
-  int n = atoi( argv[3] );
-  srand48(seed);
-  int i;
-  float randy;
-  printf("Writing...\n");
-  i = 0;
-  for( i = 0; i < numP; i++ ){
-    randy = n*drand48();
-    // Imprime solo 1/n de las partículas
-    if( randy <= 1 ){
-      fprintf( fila, "%d %f %f %f %f %f %f %f\n",P[i].Id, P[i].Mass, P[i].Pos[0], P[i].Pos[1], P[i].Pos[2], P[i].Vel[0] ,P[i].Vel[1] ,P[i].Vel[2] );
-    }
-  }
-  fclose(fila);
   return 0;
 }
 
@@ -107,7 +87,7 @@ void readBinary( char* name ){
   numP += header.npart[type];
   
   /*
-// Determina el tipo de particulas que se quiere
+  // Determina el tipo de particulas que se quiere
   int k;
   for( k = 0; k < 6; k++){
     printf("%d\n", header.npart[k]);
@@ -115,13 +95,8 @@ void readBinary( char* name ){
   */
 
   // Aparta memoria
-  printf("Allocating memory...\n");
-  P = malloc(numP*sizeof(struct Particle));
-  for( i = 0; i < numP; i++){
-    P[i].Pos = malloc(3*sizeof(float));
-    P[i].Vel = malloc(3*sizeof(float));
-  }
   printf("El numero de particulas es %d\n", numP);
+  P = malloc(sizeof(struct Particle));
 
   //-------------------------------------------------------------
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -130,53 +105,63 @@ void readBinary( char* name ){
   //-------------------------------------------------------------
 
   // Posiciones
-  printf("Getting Positions...\n");
+  printf("Getting-Writting positions...\n");
+  FILE *fila = fopen( "pos", "w" );
   SKIP;
   for( i = 0; i < numP; i++){
     for( j = 0; j < 3; j++){
-      fread( &P[i].Pos[j], sizeof(float), 1, file );
+      fread( &P[0].Pos[j], sizeof(float), 1, file );
     }
+    fprintf( fila, "%f %f %f\n", P[0].Pos[0], P[0].Pos[1], P[0].Pos[2] );
   }
   SKIP;
+  fclose(fila);
 
   // Velocidades
-  printf("Getting Velocities...\n");
+  printf("Getting-Writting Velocities...\n");
+  fila = fopen( "vel", "w" );
   SKIP;
   for( i = 0; i < numP; i++){
     for( j = 0; j < 3; j++){
-      fread( &P[i].Vel[j], sizeof(float), 1, file );
+      fread( &P[0].Vel[j], sizeof(float), 1, file );
     }
+    fprintf( fila, "%f %f %f\n", P[0].Vel[0] ,P[0].Vel[1] ,P[0].Vel[2] );      
   }
   SKIP;
+  fclose(fila);
 
   // IDs
-  printf("Getting Particle IDs...\n");
+  printf("Getting-Writting Particle IDs...\n");
+  fila = fopen( "id", "w" );
   SKIP;
   for( i = 0 ; i < numP; i++ ){
-    fread( &P[i].Id, sizeof(int), 1, file );
+    fread( &P[0].Id, sizeof(int), 1, file );
+    fprintf( fila, "%d\n", P[0].Id );      
   }
   SKIP;
+  fclose(fila);
 
   // Masas
-  printf("Getting Masses...\n");
+  printf("Getting-Writting Masses...\n");
+  fila = fopen( "mass", "w" );
   SKIP;
-  int sum = 0;
   i = 5;
   if( header.mass[i] == 0 ){
     //printf(" Las masas son iguales\n ");
     for( j = 0; j < header.npart[i]; j++ ){
-      fread( &P[sum].Mass, sizeof(float), 1, file );
-      sum++;
+      fread( &P[0].Mass, sizeof(float), 1, file );
+      fprintf( fila, "%f\n", P[0].Mass );     
     }
   }
   else{
     //printf("Las masas son diferentes ");
     for( j = 0; j < header.npart[i]; j++ ){
-      P[sum].Mass = header.mass[i];
+      P[0].Mass = header.mass[i];
+      fprintf( fila, "%f\n", P[0].Mass );     
     }
   }
-  sum++;
   SKIP;
+  fclose(fila);
   printf("End...\n");
   fclose(file);
 }
